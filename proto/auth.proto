@@ -1,0 +1,103 @@
+syntax = "proto3";
+
+package auth.v1;
+
+option go_package = "vietstrix_be/pkg/pb/auth/v1;authv1";
+
+// AuthService provides gRPC endpoints for central authentication and token validation.
+service AuthService {
+  // Login performs username/password authentication
+  rpc Login (LoginRequest) returns (LoginResponse);
+
+  // Verify2FA completes 2FA authentication using temp_token and TOTP code
+  rpc Verify2FA (Verify2FARequest) returns (LoginResponse);
+
+  // RefreshToken generates a new access/refresh token pair
+  rpc RefreshToken (RefreshTokenRequest) returns (RefreshTokenResponse);
+
+  // ValidateToken verifies an access token and returns claims/user details (Fast RPC for sub-apps)
+  rpc ValidateToken (ValidateTokenRequest) returns (ValidateTokenResponse);
+
+  // GetProfile retrieves detailed user profile information
+  rpc GetProfile (GetProfileRequest) returns (GetProfileResponse);
+}
+
+// --- Request & Response Messages ---
+
+message LoginRequest {
+  string username = 1;
+  string password = 2;
+  string ip_address = 3;
+  string user_agent = 4;
+}
+
+message Verify2FARequest {
+  string temp_token = 1;
+  string code = 2;
+  string ip_address = 3;
+  string user_agent = 4;
+}
+
+message LoginResponse {
+  bool success = 1;
+  string message = 2;
+  bool requires_2fa = 3;
+  string temp_token = 4;
+  string access_token = 5;
+  string refresh_token = 6;
+  string token_type = 7;
+  int64 expires_in = 8;
+  UserInfo user = 9;
+}
+
+message RefreshTokenRequest {
+  string refresh_token = 1;
+  string ip_address = 2;
+  string user_agent = 3;
+}
+
+message RefreshTokenResponse {
+  string access_token = 1;
+  string refresh_token = 2;
+  string token_type = 3;
+  int64 expires_in = 4;
+}
+
+message ValidateTokenRequest {
+  string access_token = 1;
+}
+
+message ValidateTokenResponse {
+  bool is_valid = 1;
+  int64 user_id = 2;
+  string username = 3;
+  string email = 4;
+  string role = 5;
+  repeated string permissions = 6;
+  string error_message = 7;
+}
+
+message GetProfileRequest {
+  int64 user_id = 1;
+}
+
+message GetProfileResponse {
+  UserInfo user = 1;
+  repeated string roles = 2;
+  map<string, PermissionList> permissions = 3;
+}
+
+message PermissionList {
+  repeated string actions = 1;
+}
+
+message UserInfo {
+  int64 id = 1;
+  string username = 2;
+  string email = 3;
+  string first_name = 4;
+  string last_name = 5;
+  string phone_number = 6;
+  string avatar_url = 7;
+  string status = 8;
+}
